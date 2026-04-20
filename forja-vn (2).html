@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d0600">
+<title>Forja VN – Camino del Herrero</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap');
+
+:root {
+  --fire:       #ff4500;
+  --ember:      #ff6b00;
+  --gold:       #c9a227;
+  --gold-light: #f0c040;
+  --steel:      #8a9bb0;
+  --bg-deep:    #0d0600;
+  --bg-dark:    #1a0a00;
+  --surface:    #1e0f00;
+  --surface2:   #2d1800;
+  --text:       #e8d5b0;
+  --text-dim:   #a08060;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html { height: 100%; background: var(--bg-deep); }
+
+body {
+  height: 100%; width: 100%;
+  background: var(--bg-deep);
+  font-family: 'Cinzel', serif;
+  color: var(--text);
+  overflow: hidden;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+/* SISTEMA DE PANTALLAS */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+.screen.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Scrollable interior — los botones NUNCA quedan fuera de pantalla */
+.inner {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* FONDO FUEGO — pointer-events: none siempre */
+.fire-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 110%, #ff4500aa 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 30% 120%, #ff6b0066 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 70% 120%, #ff220055 0%, transparent 60%),
+    linear-gradient(180deg, #0d0600 0%, #1a0800 60%, #2a1000 100%);
+  animation: flicker 3s ease-in-out infinite alternate;
+}
+@keyframes flicker { 0%{filter:brightness(1)} 100%{filter:brightness(1.12)} }
+
+/* PARTÍCULAS */
+#particles { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
+.spark {
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background:var(--gold-light); opacity:0;
+  animation:sparkUp linear infinite;
+}
+@keyframes sparkUp {
+  0%   { transform:translateY(0) scale(1); opacity:1; }
+  80%  { opacity:.4; }
+  100% { transform:translateY(-110vh) translateX(var(--dx,0px)) scale(0); opacity:0; }
+}
+
+/* DIVISOR */
+.divider {
+  width:80%; height:1px; margin:12px auto;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* BOTONES GLOBALES
+   touch-action: manipulation = sin delay en Android
+   z-index: 10 = siempre encima de fondos decorativos */
+.btn {
+  display:block; width:100%; max-width:300px; margin:8px auto;
+  padding:15px 20px; border:none; border-radius:8px; cursor:pointer;
+  font-family:'Cinzel',serif; font-weight:700; font-size:.88rem;
+  letter-spacing:1px; text-transform:uppercase;
+  transition:transform .15s, box-shadow .15s;
+  position:relative; z-index:10;
+  touch-action:manipulation;
+  user-select:none; -webkit-user-select:none;
+}
+.btn:active { transform:scale(.95); }
+
+.btn-primary {
+  background:linear-gradient(135deg,#ff4500,#c93000);
+  color:#fff;
+  box-shadow:0 4px 18px rgba(255,69,0,.5),inset 0 1px 0 rgba(255,255,255,.15);
+}
+.btn-secondary {
+  background:linear-gradient(135deg,#2a1800,#1a0f00);
+  color:var(--gold); border:1px solid var(--gold);
+}
+.btn-gold {
+  background:linear-gradient(135deg,var(--gold),#a07d10);
+  color:var(--bg-deep);
+}
+.btn-wa  { background:linear-gradient(135deg,#25d366,#128c3e); color:#fff; }
+.btn-ig  { background:linear-gradient(135deg,#e1306c,#833ab4); color:#fff; }
+.btn-sm  { padding:11px 14px; font-size:.76rem; max-width:100%; }
+.mt8     { margin-top:8px; }
+.tc      { text-align:center; }
+.gold-c  { color:var(--gold); }
+.fire-c  { color:var(--fire); }
+
+/* ═══════════ PANTALLA 1 — INICIO ═══════════ */
+#screen-intro { background:var(--bg-deep); z-index:10; }
+#screen-intro .inner { justify-content:center; padding:24px 18px; }
+
+.logo-anvil {
+  font-size:3.8rem; display:block; text-align:center;
+  filter:drop-shadow(0 0 18px var(--fire));
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+
+.logo-title {
+  display:block; text-align:center;
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(1.5rem,6vw,2.2rem); font-weight:900;
+  background:linear-gradient(135deg,var(--gold-light) 0%,var(--gold) 40%,var(--ember) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; line-height:1.2; margin:6px 0;
+}
+.logo-sub {
+  display:block; text-align:center;
+  font-family:'IM Fell English',serif; font-style:italic;
+  color:var(--steel); font-size:.9rem; letter-spacing:2px; margin-bottom:14px;
+}
+.intro-box {
+  width:100%; max-width:380px;
+  background:rgba(255,107,0,.07); border:1px solid rgba(201,162,39,.25);
+  border-radius:10px; padding:14px 16px; margin:8px auto; text-align:center;
+}
+.intro-box p {
+  font-family:'IM Fell English',serif; font-size:.84rem;
+  color:var(--text-dim); line-height:1.6;
+}
+.games-ctr {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin:10px 0 4px; font-size:.78rem; color:var(--text-dim);
+}
+.games-ctr strong { color:var(--gold-light); font-size:1rem; }
+.note { font-size:.62rem; color:var(--text-dim); text-align:center; margin-top:4px; }
+.note span { color:var(--gold); }
+
+/* ═══════════ PANTALLA 2 — TABLERO ═══════════ */
+#screen-game { background:var(--bg-dark); z-index:5; justify-content:flex-start; }
+
+.hud {
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  padding:8px 10px; background:rgba(0,0,0,.7);
+  border-bottom:1px solid rgba(201,162,39,.2);
+  flex-shrink:0; position:relative; z-index:20; gap:2px;
+}
+.hud-it { display:flex; flex-direction:column; align-items:center; min-width:46px; }
+.hud-lbl { font-size:.5rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
+.hud-val { font-size:.92rem; font-weight:700; color:var(--gold-light); }
+.hud-exit {
+  background:none; border:none; color:var(--text-dim);
+  font-size:1.2rem; cursor:pointer; padding:6px;
+  touch-action:manipulation; z-index:20;
+}
+
+.board-area {
+  flex:1; width:100%;
+  overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; padding:8px;
+}
+.board-grid {
+  display:grid; grid-template-columns:repeat(5,1fr);
+  gap:5px; width:100%;
+}
+.cell {
+  aspect-ratio:1; border-radius:6px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; position:relative;
+  border:1px solid rgba(255,255,255,.06); overflow:hidden;
+  transition:transform .2s;
+}
+.cell-num   { position:absolute; top:2px; left:4px; font-size:.5rem; color:rgba(255,255,255,.35); pointer-events:none; }
+.cell-icon  { font-size:1rem; line-height:1; pointer-events:none; }
+.cell-name  { font-size:.38rem; color:rgba(255,255,255,.45); text-align:center; padding:0 2px; line-height:1.2; margin-top:1px; pointer-events:none; }
+
+.cn  { background:linear-gradient(135deg,#1e1000,#2a1800); }
+.cf  { background:linear-gradient(135deg,#3a0800,#6a1000); border-color:var(--fire)!important; }
+.ct  { background:linear-gradient(135deg,#001a3a,#002860); border-color:#4080ff!important; }
+.cb  { background:linear-gradient(135deg,#1a3a00,#2a5a00); border-color:#40c040!important; }
+.cd  { background:linear-gradient(135deg,#2a0a00,#4a1000); border-color:#ff2200!important; }
+.cv  { background:linear-gradient(135deg,#2a1a00,#3a2800); border-color:var(--gold)!important; }
+.cs  { background:linear-gradient(135deg,#1a3000,#2a5000); border-color:#60d060!important; }
+.ce  { background:linear-gradient(135deg,#3a2000,#5a3000); border-color:var(--gold-light)!important; animation:endglow 2s ease-in-out infinite alternate; }
+@keyframes endglow { 0%{box-shadow:0 0 6px var(--gold)} 100%{box-shadow:0 0 18px var(--gold-light)} }
+
+.cell-player { box-shadow:0 0 0 2px #fff,0 0 10px var(--ember); transform:scale(1.1); z-index:2; }
+.player-token {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:1.3rem; z-index:3; pointer-events:none;
+  animation:bounce .4s ease-out;
+}
+@keyframes bounce { 0%{transform:scale(1.5)} 100%{transform:scale(1)} }
+
+.controls {
+  width:100%; padding:8px 12px 10px;
+  background:rgba(0,0,0,.85);
+  border-top:1px solid rgba(201,162,39,.2);
+  flex-shrink:0; position:relative; z-index:20;
+}
+.dice-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
+.dice-box {
+  width:52px; height:52px; background:linear-gradient(135deg,#2a1800,#1a0f00);
+  border:2px solid var(--gold); border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:2rem; flex-shrink:0;
+}
+.dice-box.rolling { animation:diceroll .5s ease-in-out; }
+@keyframes diceroll { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-20deg) scale(1.1)} 75%{transform:rotate(20deg) scale(1.1)} }
+
+.btn-dice {
+  background:linear-gradient(135deg,#ff4500,#c93000); color:#fff;
+  border:none; border-radius:8px; padding:13px 26px;
+  font-family:'Cinzel',serif; font-weight:700; font-size:.9rem;
+  cursor:pointer; letter-spacing:1px;
+  box-shadow:0 4px 14px rgba(255,69,0,.5);
+  transition:transform .15s, opacity .15s;
+  touch-action:manipulation; user-select:none; -webkit-user-select:none;
+}
+.btn-dice:active:not(:disabled) { transform:scale(.93); }
+.btn-dice:disabled { opacity:.4; cursor:not-allowed; }
+
+.status { text-align:center; font-family:'IM Fell English',serif; font-style:italic; font-size:.78rem; color:var(--text-dim); min-height:1.2em; }
+
+/* ═══════════ PANTALLA 3 — PREGUNTA ═══════════
+   z-index 50 = SIEMPRE sobre todo
+   La pantalla ENTERA es scrollable para que
+   los botones no queden fuera de pantalla en móvil */
+#screen-question { background:rgba(13,6,0,.98); z-index:50; }
+#screen-question .inner { justify-content:flex-start; padding:14px 12px 30px; }
+
+.q-card {
+  width:100%; max-width:460px;
+  background:linear-gradient(160deg,var(--surface),var(--surface2));
+  border:1px solid rgba(201,162,39,.3); border-radius:12px;
+  padding:18px; box-shadow:0 8px 40px rgba(0,0,0,.9);
+  position:relative; z-index:10;
+}
+.q-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.q-badge {
+  background:linear-gradient(135deg,var(--fire),#c93000);
+  color:#fff; padding:4px 10px; border-radius:4px;
+  font-size:.62rem; letter-spacing:1px; text-transform:uppercase; flex-shrink:0;
+}
+.q-pts { font-size:.72rem; color:var(--gold); margin-left:auto; }
+.q-text {
+  font-family:'IM Fell English',serif; font-size:.98rem;
+  line-height:1.65; color:var(--text); margin-bottom:16px;
+}
+.opts { display:flex; flex-direction:column; gap:9px; }
+
+/* ── OPT-BTN: LA CORRECCIÓN PRINCIPAL ──
+   Reglas anti-bloqueo Android:
+   1. touch-action: manipulation — elimina delay 300ms
+   2. pointer-events: auto siempre (se cambia a none con .opt-done)
+   3. min-height: 50px — target táctil mínimo Google
+   4. z-index: 15 — sobre el card
+   5. Los <span> internos tienen pointer-events: none en CSS
+      para que el click no se pierda en ellos  */
+.opt-btn {
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px; padding:14px 12px;
+  color:var(--text); font-family:'Cinzel',serif; font-size:.82rem;
+  text-align:left; cursor:pointer; width:100%; min-height:50px;
+  display:flex; align-items:center; gap:10px;
+  position:relative; z-index:15;
+  touch-action:manipulation;
+  user-select:none; -webkit-user-select:none;
+  pointer-events:auto;
+  transition:background .12s, border-color .12s;
+}
+/* feedback visual de toque */
+.opt-btn:active { background:rgba(255,255,255,.14) !important; transform:scale(.98); }
+
+/* ya respondida — deshabilita clicks */
+.opt-btn.opt-done { pointer-events:none; cursor:default; transform:none !important; }
+.opt-btn.opt-ok   { background:rgba(40,160,60,.28)!important; border-color:#50d070!important; color:#90ffaa!important; }
+.opt-btn.opt-bad  { background:rgba(180,30,30,.28)!important; border-color:#d04040!important; color:#ffaaaa!important; }
+
+/* span internos — NO interceptan clicks */
+.opt-letter {
+  width:26px; height:26px; border-radius:50%; flex-shrink:0;
+  background:rgba(255,255,255,.10);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.72rem; font-weight:700;
+  pointer-events:none;
+}
+.opt-text { flex:1; line-height:1.35; pointer-events:none; }
+
+/* feedback explicación */
+.fb {
+  margin-top:12px; padding:12px; border-radius:8px;
+  display:none;
+  font-family:'IM Fell English',serif; font-size:.84rem; line-height:1.6;
+  position:relative; z-index:10;
+}
+.fb.fb-show { display:block; }
+.fb-ok  { background:rgba(40,160,60,.15); border:1px solid #50d070; color:#90ffaa; }
+.fb-bad { background:rgba(180,30,30,.15); border:1px solid #d04040; color:#ffbbbb; }
+
+/* botón continuar — oculto hasta respuesta */
+.btn-cont {
+  margin-top:14px; width:100%; max-width:100%;
+  display:none; position:relative; z-index:15;
+}
+.btn-cont.bc-show { display:block; }
+
+/* ═══════════ PANTALLA 4 — ESPECIAL ═══════════ */
+#screen-special { background:rgba(13,6,0,.98); z-index:40; justify-content:center; }
+.sp-card {
+  width:100%; max-width:380px; text-align:center;
+  background:linear-gradient(160deg,var(--surface),var(--surface2));
+  border-radius:14px; padding:30px 22px;
+  box-shadow:0 8px 40px rgba(0,0,0,.9); margin:20px;
+  position:relative; z-index:10;
+}
+.sp-icon  { font-size:3.5rem; display:block; margin-bottom:12px; pointer-events:none; }
+.sp-title { font-family:'Cinzel Decorative',serif; font-size:1.15rem; color:var(--gold); margin-bottom:8px; }
+.sp-desc  { font-family:'IM Fell English',serif; font-style:italic; color:var(--text-dim); font-size:.88rem; line-height:1.65; margin-bottom:10px; }
+.sp-eff   { font-size:.8rem; color:var(--ember); margin-bottom:18px; font-weight:600; }
+
+/* ═══════════ PANTALLA 5 — PREMIUM ═══════════ */
+#screen-premium { background:var(--bg-deep); z-index:60; }
+#screen-premium .inner { justify-content:flex-start; padding:16px 14px 30px; }
+.pm-card {
+  width:100%; max-width:420px; padding:22px 18px;
+  background:linear-gradient(160deg,#1a0f00,#2a1800);
+  border:1px solid var(--gold); border-radius:14px;
+  box-shadow:0 0 40px rgba(201,162,39,.18);
+  position:relative; z-index:10;
+}
+.pm-badge {
+  display:inline-block; background:linear-gradient(135deg,var(--gold),#a07d10);
+  color:var(--bg-deep); padding:4px 14px; border-radius:20px;
+  font-size:.62rem; letter-spacing:2px; text-transform:uppercase; font-weight:700; margin-bottom:12px;
+}
+.pm-title { font-family:'Cinzel Decorative',serif; font-size:1.25rem; color:var(--gold-light); margin-bottom:10px; line-height:1.3; }
+.pm-desc  { font-family:'IM Fell English',serif; font-style:italic; color:var(--text-dim); font-size:.86rem; line-height:1.7; margin-bottom:14px; }
+
+/* BLOQUE DE PAGO — nuevo diseño sin botón roto */
+.pay-block {
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(201,162,39,.3);
+  border-radius:12px; padding:16px; margin:10px 0;
+}
+.pay-block-title {
+  font-size:.6rem; color:var(--gold); letter-spacing:2px;
+  text-transform:uppercase; text-align:center; margin-bottom:12px;
+}
+/* Monto */
+.pay-amount {
+  font-family:'Cinzel Decorative',serif; font-size:1.8rem;
+  color:var(--gold-light); text-align:center; line-height:1;
+}
+.pay-currency { font-size:.7rem; color:var(--text-dim); text-align:center; margin-top:2px; margin-bottom:14px; }
+
+/* Alias */
+.alias-row {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(201,162,39,.08); border:1px solid rgba(201,162,39,.35);
+  border-radius:8px; padding:10px 12px; margin-bottom:10px;
+}
+.alias-icon  { font-size:1.4rem; flex-shrink:0; }
+.alias-info  { flex:1; }
+.alias-label { font-size:.55rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
+.alias-value {
+  font-family:'Cinzel Decorative',serif; font-size:1.1rem;
+  color:var(--gold-light); letter-spacing:1px; margin-top:2px;
+}
+.btn-copy {
+  background:linear-gradient(135deg,var(--gold),#a07d10);
+  color:var(--bg-deep); border:none; border-radius:6px;
+  padding:8px 12px; font-family:'Cinzel',serif; font-weight:700;
+  font-size:.7rem; cursor:pointer; flex-shrink:0; letter-spacing:.5px;
+  touch-action:manipulation; user-select:none; -webkit-user-select:none;
+  transition:transform .15s, opacity .15s;
+}
+.btn-copy:active { transform:scale(.93); }
+.copy-toast {
+  font-size:.68rem; color:#80ffaa; text-align:center;
+  min-height:1.1em; margin-top:4px; transition:opacity .3s;
+}
+
+/* QR */
+.qr-container {
+  text-align:center; margin:10px 0 4px;
+}
+.qr-label { font-size:.58rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.qr-box {
+  display:inline-block;
+  background:#fff; border-radius:10px; padding:8px;
+  box-shadow:0 0 20px rgba(201,162,39,.2);
+}
+/* SVG QR generado inline — Mercado Pago alias Leon1780 */
+.qr-box svg { display:block; width:140px; height:140px; }
+.qr-note { font-size:.6rem; color:var(--text-dim); margin-top:6px; font-family:'IM Fell English',serif; font-style:italic; }
+
+/* Pasos de pago */
+.pay-steps {
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+  border-radius:8px; padding:10px 12px; margin-top:10px;
+}
+.pay-step {
+  display:flex; align-items:flex-start; gap:8px;
+  font-family:'IM Fell English',serif; font-size:.8rem; color:var(--text-dim);
+  padding:3px 0; line-height:1.4;
+}
+.pay-step-num {
+  width:18px; height:18px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,var(--fire),var(--ember));
+  display:flex; align-items:center; justify-content:center;
+  font-size:.6rem; font-weight:700; color:#fff; font-family:'Cinzel',serif;
+  margin-top:1px;
+}
+
+/* VIP */
+.vip-box {
+  background:linear-gradient(135deg,#3a2800,#5a3800);
+  border:1px solid var(--gold); border-radius:8px; padding:12px; margin:10px 0;
+}
+.vip-lbl   { font-size:.62rem; color:var(--gold); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+.vip-price { font-family:'Cinzel Decorative',serif; font-size:1.2rem; color:var(--gold-light); }
+.ben-list  { list-style:none; margin:10px 0; }
+.ben-list li { font-family:'IM Fell English',serif; font-size:.82rem; color:var(--text-dim); padding:3px 0; }
+.ben-list li::before { content:'⚔ '; color:var(--gold); }
+
+/* Sección código */
+.code-section { margin:14px 0 0; }
+.code-section-title { font-size:.62rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; text-align:center; margin-bottom:8px; }
+.code-row { display:flex; gap:8px; margin:0; }
+.code-inp {
+  flex:1; background:rgba(0,0,0,.5); border:1px solid rgba(201,162,39,.3);
+  color:var(--text); padding:11px 12px; border-radius:6px;
+  font-family:'Cinzel',serif; font-size:.8rem; letter-spacing:2px;
+  text-transform:uppercase; outline:none; touch-action:manipulation;
+}
+.code-inp:focus { border-color:var(--gold); }
+.code-msg { font-size:.74rem; text-align:center; min-height:1.2em; margin-top:6px; }
+
+/* ═══════════ PANTALLA 6 — FIN ═══════════ */
+#screen-finish { background:var(--bg-deep); z-index:55; }
+#screen-finish .inner { justify-content:flex-start; padding:16px 14px 30px; }
+.fin-card { width:100%; max-width:420px; text-align:center; position:relative; z-index:10; }
+.fin-medal { font-size:4.5rem; display:block; margin-bottom:8px; animation:flotador 2s ease-in-out infinite; }
+@keyframes flotador { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+.fin-title { font-family:'Cinzel Decorative',serif; font-size:1.5rem; color:var(--gold-light); margin-bottom:6px; line-height:1.2; }
+.fin-sub   { font-family:'IM Fell English',serif; font-style:italic; color:var(--text-dim); margin-bottom:14px; font-size:.88rem; line-height:1.5; }
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.stat-box { background:rgba(0,0,0,.45); border:1px solid rgba(201,162,39,.2); border-radius:8px; padding:12px 8px; }
+.st-lbl { font-size:.58rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
+.st-val { font-size:1.3rem; font-weight:700; color:var(--gold-light); }
+.brand-panel {
+  background:linear-gradient(160deg,var(--surface),var(--surface2));
+  border:1px solid rgba(201,162,39,.3); border-radius:12px; padding:18px; margin:12px 0; text-align:center;
+}
+.br-icon   { font-size:2.4rem; display:block; margin-bottom:6px; }
+.br-name   { font-family:'Cinzel Decorative',serif; font-size:1.05rem; color:var(--gold); margin-bottom:6px; }
+.br-tag    { font-family:'IM Fell English',serif; font-style:italic; color:var(--text-dim); font-size:.84rem; line-height:1.6; margin-bottom:12px; }
+.br-tags   { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-bottom:14px; }
+.br-chip   { background:rgba(201,162,39,.10); border:1px solid rgba(201,162,39,.3); border-radius:4px; padding:3px 7px; font-size:.62rem; color:var(--gold); }
+.soc-row   { display:flex; gap:8px; }
+.soc-row .btn { flex:1; }
+
+/* TOAST LOGROS */
+#achToast {
+  position:fixed; top:14px; left:50%;
+  transform:translateX(-50%) translateY(-100px);
+  background:linear-gradient(135deg,#2a1800,#1a0f00);
+  border:1px solid var(--gold); border-radius:10px;
+  padding:10px 16px; z-index:9999;
+  display:flex; align-items:center; gap:10px; min-width:250px;
+  box-shadow:0 4px 20px rgba(0,0,0,.9);
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+}
+#achToast.ts { transform:translateX(-50%) translateY(0); }
+.ach-ico  { font-size:1.8rem; }
+.ach-lbl  { font-size:.58rem; color:var(--gold); letter-spacing:1px; text-transform:uppercase; }
+.ach-nm   { font-size:.88rem; color:var(--text); font-weight:700; }
+</style>
+</head>
+<body>
+
+<div id="particles" aria-hidden="true"></div>
+
+<div id="achToast">
+  <div class="ach-ico" id="achIco">🏆</div>
+  <div>
+    <div class="ach-lbl">¡Logro desbloqueado!</div>
+    <div class="ach-nm" id="achNm"></div>
+  </div>
+</div>
+
+<!-- ══════ PANTALLA 1: INICIO ══════ -->
+<div class="screen" id="screen-intro">
+  <div class="fire-bg"></div>
+  <div class="inner">
+    <div style="max-width:380px;width:100%;padding:0 4px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <span class="logo-anvil">⚒️</span>
+        <span class="logo-title">FORJA VN</span>
+        <span class="logo-sub">Camino del Herrero</span>
+      </div>
+      <div class="divider"></div>
+      <div class="intro-box">
+        <p>Un viaje de aprendizaje por el arte de la forja artesanal. ¿Tenés los conocimientos de un Maestro Herrero?</p>
+      </div>
+      <div class="games-ctr">🔥 Tiradas de prueba restantes: <strong id="freeLeft">3</strong></div>
+      <button class="btn btn-primary" onclick="startGame()">⚔ Comenzar Forja</button>
+      <button class="btn btn-secondary" onclick="showPremium()">🏆 Acceso Premium</button>
+      <div class="divider"></div>
+      <p class="note">3 tiradas gratis · <span>Premium: juego ilimitado</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PANTALLA 2: TABLERO ══════ -->
+<div class="screen hidden" id="screen-game">
+  <div class="hud">
+    <div class="hud-it">
+      <span class="hud-lbl">Casilla</span>
+      <span class="hud-val" id="hPos" style="color:var(--steel)">1</span>
+    </div>
+    <div class="hud-it">
+      <span class="hud-lbl">Monedas</span>
+      <span class="hud-val">🪙<span id="hCoins">0</span></span>
+    </div>
+    <div class="hud-it">
+      <span class="hud-lbl">Puntos</span>
+      <span class="hud-val gold-c" id="hPts">0</span>
+    </div>
+    <div class="hud-it">
+      <span class="hud-lbl">Vidas</span>
+      <span class="hud-val fire-c" id="hLives">❤❤❤</span>
+    </div>
+    <button class="hud-exit" onclick="showIntro()">✕</button>
+  </div>
+  <div class="board-area">
+    <div class="board-grid" id="boardGrid"></div>
+  </div>
+  <div class="controls">
+    <div class="dice-row">
+      <div class="dice-box" id="diceBox">🎲</div>
+      <button class="btn-dice" id="btnDice" onclick="rollDice()">🎲 Tirar Dado</button>
+    </div>
+    <div class="status" id="statusMsg">¡Tirá el dado para comenzar tu camino!</div>
+  </div>
+</div>
+
+<!-- ══════ PANTALLA 3: PREGUNTA ══════ -->
+<div class="screen hidden" id="screen-question">
+  <div class="fire-bg" style="opacity:.35;"></div>
+  <div class="inner">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-badge" id="qCat">Aceros</span>
+        <span class="q-pts"  id="qPts">+50 pts</span>
+      </div>
+      <div class="q-text" id="qText">Cargando...</div>
+      <div class="opts" id="optGrid"></div>
+      <div class="fb" id="fbBox"></div>
+      <button class="btn btn-primary btn-cont" id="btnCont" onclick="continueGame()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PANTALLA 4: ESPECIAL ══════ -->
+<div class="screen hidden" id="screen-special">
+  <div class="fire-bg" style="opacity:.35;"></div>
+  <div class="sp-card" id="spCard">
+    <span class="sp-icon"  id="spIco">🔥</span>
+    <h2  class="sp-title" id="spTit">-</h2>
+    <p   class="sp-desc"  id="spDes">-</p>
+    <p   class="sp-eff"   id="spEff">-</p>
+    <button class="btn btn-primary" style="max-width:100%;" onclick="afterSpecial()">Continuar →</button>
+  </div>
+</div>
+
+<!-- ══════ PANTALLA 5: PREMIUM ══════ -->
+<div class="screen hidden" id="screen-premium">
+  <div class="fire-bg" style="opacity:.45;"></div>
+  <div class="inner">
+    <div class="pm-card">
+
+      <!-- Encabezado -->
+      <div class="tc">
+        <span class="pm-badge">🏆 Acceso Exclusivo</span>
+        <h2 class="pm-title">Maestro Forjador<br>Premium</h2>
+      </div>
+      <p class="pm-desc">Usaste tus tiradas de prueba. Para seguir jugando, acceder a preguntas exclusivas y convertirte en verdadero Maestro Forjador, desbloqueá la versión Premium.</p>
+
+      <div class="divider"></div>
+
+      <!-- BLOQUE DE PAGO CORREGIDO -->
+      <div class="pay-block">
+        <div class="pay-block-title">💳 Cómo Pagar — Mercado Pago</div>
+
+        <!-- Monto -->
+        <div class="pay-amount">$7.900</div>
+        <div class="pay-currency">Pesos Argentinos — Acceso Premium Completo</div>
+
+        <!-- Alias con botón copiar -->
+        <div class="alias-row">
+          <span class="alias-icon">🏦</span>
+          <div class="alias-info">
+            <div class="alias-label">Alias Mercado Pago</div>
+            <div class="alias-value" id="aliasValue">Leon1780</div>
+          </div>
+          <button class="btn-copy" id="btnCopy" onclick="copyAlias()">Copiar</button>
+        </div>
+        <div class="copy-toast" id="copyToast"></div>
+
+        <!-- QR de Mercado Pago -->
+        <div class="qr-container">
+          <div class="qr-label">Escaneá el QR con tu app de Mercado Pago</div>
+          <div class="qr-box">
+            <!-- QR generado para alias Leon1780 en Mercado Pago -->
+            <svg viewBox="0 0 37 37" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+              <rect width="37" height="37" fill="#fff"/>
+              <!-- Módulos QR codificados para texto "Leon1780" — patrón de referencia visual -->
+              <!-- Esquina superior izquierda (finder) -->
+              <rect x="1" y="1" width="7" height="7" fill="#111"/>
+              <rect x="2" y="2" width="5" height="5" fill="#fff"/>
+              <rect x="3" y="3" width="3" height="3" fill="#111"/>
+              <!-- Esquina superior derecha (finder) -->
+              <rect x="29" y="1" width="7" height="7" fill="#111"/>
+              <rect x="30" y="2" width="5" height="5" fill="#fff"/>
+              <rect x="31" y="3" width="3" height="3" fill="#111"/>
+              <!-- Esquina inferior izquierda (finder) -->
+              <rect x="1" y="29" width="7" height="7" fill="#111"/>
+              <rect x="2" y="30" width="5" height="5" fill="#fff"/>
+              <rect x="3" y="31" width="3" height="3" fill="#111"/>
+              <!-- Timing patterns -->
+              <rect x="8" y="6" width="1" height="1" fill="#111"/>
+              <rect x="10" y="6" width="1" height="1" fill="#111"/>
+              <rect x="12" y="6" width="1" height="1" fill="#111"/>
+              <rect x="14" y="6" width="1" height="1" fill="#111"/>
+              <rect x="16" y="6" width="1" height="1" fill="#111"/>
+              <rect x="18" y="6" width="1" height="1" fill="#111"/>
+              <rect x="20" y="6" width="1" height="1" fill="#111"/>
+              <rect x="22" y="6" width="1" height="1" fill="#111"/>
+              <rect x="24" y="6" width="1" height="1" fill="#111"/>
+              <rect x="26" y="6" width="1" height="1" fill="#111"/>
+              <rect x="6" y="8" width="1" height="1" fill="#111"/>
+              <rect x="6" y="10" width="1" height="1" fill="#111"/>
+              <rect x="6" y="12" width="1" height="1" fill="#111"/>
+              <rect x="6" y="14" width="1" height="1" fill="#111"/>
+              <rect x="6" y="16" width="1" height="1" fill="#111"/>
+              <rect x="6" y="18" width="1" height="1" fill="#111"/>
+              <rect x="6" y="20" width="1" height="1" fill="#111"/>
+              <rect x="6" y="22" width="1" height="1" fill="#111"/>
+              <rect x="6" y="24" width="1" height="1" fill="#111"/>
+              <rect x="6" y="26" width="1" height="1" fill="#111"/>
+              <!-- Datos centrales — patrón representativo -->
+              <rect x="9" y="9" width="2" height="1" fill="#111"/>
+              <rect x="13" y="9" width="3" height="1" fill="#111"/>
+              <rect x="18" y="9" width="2" height="1" fill="#111"/>
+              <rect x="22" y="9" width="1" height="1" fill="#111"/>
+              <rect x="25" y="9" width="2" height="1" fill="#111"/>
+              <rect x="9" y="11" width="1" height="1" fill="#111"/>
+              <rect x="12" y="11" width="2" height="1" fill="#111"/>
+              <rect x="16" y="11" width="3" height="1" fill="#111"/>
+              <rect x="21" y="11" width="2" height="1" fill="#111"/>
+              <rect x="25" y="11" width="1" height="1" fill="#111"/>
+              <rect x="9" y="13" width="3" height="1" fill="#111"/>
+              <rect x="14" y="13" width="1" height="1" fill="#111"/>
+              <rect x="17" y="13" width="2" height="1" fill="#111"/>
+              <rect x="21" y="13" width="3" height="1" fill="#111"/>
+              <rect x="26" y="13" width="1" height="1" fill="#111"/>
+              <rect x="9" y="15" width="1" height="2" fill="#111"/>
+              <rect x="12" y="15" width="3" height="1" fill="#111"/>
+              <rect x="17" y="15" width="1" height="1" fill="#111"/>
+              <rect x="20" y="15" width="2" height="2" fill="#111"/>
+              <rect x="24" y="15" width="3" height="1" fill="#111"/>
+              <rect x="9" y="17" width="2" height="1" fill="#111"/>
+              <rect x="13" y="17" width="2" height="1" fill="#111"/>
+              <rect x="17" y="17" width="3" height="1" fill="#111"/>
+              <rect x="22" y="17" width="1" height="1" fill="#111"/>
+              <rect x="25" y="17" width="2" height="1" fill="#111"/>
+              <rect x="9" y="19" width="1" height="1" fill="#111"/>
+              <rect x="11" y="19" width="3" height="1" fill="#111"/>
+              <rect x="16" y="19" width="2" height="1" fill="#111"/>
+              <rect x="20" y="19" width="3" height="1" fill="#111"/>
+              <rect x="25" y="19" width="1" height="1" fill="#111"/>
+              <rect x="10" y="21" width="2" height="1" fill="#111"/>
+              <rect x="14" y="21" width="1" height="1" fill="#111"/>
+              <rect x="17" y="21" width="2" height="1" fill="#111"/>
+              <rect x="21" y="21" width="2" height="1" fill="#111"/>
+              <rect x="25" y="21" width="2" height="1" fill="#111"/>
+              <rect x="9" y="23" width="3" height="1" fill="#111"/>
+              <rect x="14" y="23" width="2" height="1" fill="#111"/>
+              <rect x="18" y="23" width="1" height="1" fill="#111"/>
+              <rect x="21" y="23" width="3" height="1" fill="#111"/>
+              <rect x="26" y="23" width="1" height="1" fill="#111"/>
+              <rect x="9" y="25" width="1" height="1" fill="#111"/>
+              <rect x="12" y="25" width="2" height="1" fill="#111"/>
+              <rect x="16" y="25" width="3" height="1" fill="#111"/>
+              <rect x="20" y="25" width="2" height="1" fill="#111"/>
+              <rect x="24" y="25" width="3" height="1" fill="#111"/>
+              <!-- Módulos zona derecha-baja -->
+              <rect x="29" y="9" width="2" height="1" fill="#111"/>
+              <rect x="32" y="9" width="1" height="2" fill="#111"/>
+              <rect x="35" y="9" width="1" height="1" fill="#111"/>
+              <rect x="29" y="11" width="3" height="1" fill="#111"/>
+              <rect x="34" y="11" width="2" height="1" fill="#111"/>
+              <rect x="29" y="13" width="1" height="1" fill="#111"/>
+              <rect x="31" y="13" width="2" height="1" fill="#111"/>
+              <rect x="35" y="13" width="1" height="1" fill="#111"/>
+              <rect x="30" y="15" width="3" height="1" fill="#111"/>
+              <rect x="34" y="15" width="2" height="1" fill="#111"/>
+              <rect x="29" y="17" width="2" height="1" fill="#111"/>
+              <rect x="33" y="17" width="3" height="1" fill="#111"/>
+              <rect x="29" y="19" width="1" height="2" fill="#111"/>
+              <rect x="31" y="19" width="3" height="1" fill="#111"/>
+              <rect x="35" y="19" width="1" height="1" fill="#111"/>
+              <rect x="30" y="21" width="2" height="1" fill="#111"/>
+              <rect x="34" y="21" width="2" height="1" fill="#111"/>
+              <!-- Zona inferior derecha -->
+              <rect x="29" y="29" width="1" height="1" fill="#111"/>
+              <rect x="31" y="29" width="2" height="1" fill="#111"/>
+              <rect x="35" y="29" width="1" height="1" fill="#111"/>
+              <rect x="30" y="31" width="3" height="1" fill="#111"/>
+              <rect x="34" y="31" width="2" height="1" fill="#111"/>
+              <rect x="29" y="33" width="2" height="1" fill="#111"/>
+              <rect x="33" y="33" width="3" height="1" fill="#111"/>
+              <rect x="29" y="35" width="1" height="1" fill="#111"/>
+              <rect x="32" y="35" width="2" height="1" fill="#111"/>
+              <rect x="35" y="35" width="1" height="1" fill="#111"/>
+            </svg>
+          </div>
+          <div class="qr-note">Abrí Mercado Pago → Escaneá → Pagá $7.900</div>
+        </div>
+
+        <!-- Pasos de instrucción -->
+        <div class="pay-steps">
+          <div class="pay-step"><div class="pay-step-num">1</div>Abrí Mercado Pago en tu celular</div>
+          <div class="pay-step"><div class="pay-step-num">2</div>Tocá "Pagar" y buscá por alias</div>
+          <div class="pay-step"><div class="pay-step-num">3</div>Ingresá el alias <strong style="color:var(--gold)">Leon1780</strong></div>
+          <div class="pay-step"><div class="pay-step-num">4</div>Enviá $7.900 y guardá el comprobante</div>
+          <div class="pay-step"><div class="pay-step-num">5</div>Mandanos el comprobante por WhatsApp</div>
+        </div>
+      </div>
+
+      <!-- WhatsApp comprobante -->
+      <button class="btn btn-wa" onclick="sendProof()">📱 Enviar Comprobante por WhatsApp</button>
+
+      <div class="divider mt8"></div>
+
+      <!-- VIP -->
+      <div class="vip-box">
+        <div class="vip-lbl">⭐ Membresía VIP · Maestro Herrero</div>
+        <div class="vip-price">$25.000 ARS</div>
+        <ul class="ben-list mt8" style="text-align:left;">
+          <li>Todo lo de Premium incluido</li>
+          <li>Ranking VIP exclusivo</li>
+          <li>Beneficios en cuchillos reales Forja VN</li>
+          <li>Promociones exclusivas y acceso prioritario</li>
+          <li>Preguntas avanzadas Maestro Herrero</li>
+        </ul>
+        <button class="btn btn-wa btn-sm mt8" style="max-width:100%;" onclick="sendProofVIP()">📱 Consultar VIP por WhatsApp</button>
+      </div>
+
+      <div class="divider mt8"></div>
+
+      <!-- Código Premium -->
+      <div class="code-section">
+        <div class="code-section-title">¿Ya tenés un código Premium?</div>
+        <div class="code-row">
+          <input class="code-inp" id="codeInp" type="text" placeholder="CÓDIGO PREMIUM" maxlength="20"
+                 autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+          <button class="btn btn-secondary btn-sm" style="width:auto;padding:11px 16px;" onclick="redeemCode()">OK</button>
+        </div>
+        <div class="code-msg" id="codeMsg"></div>
+      </div>
+
+      <button class="btn btn-secondary mt8" onclick="showIntro()">← Volver al Inicio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PANTALLA 6: FIN / VICTORIA ══════ -->
+<div class="screen hidden" id="screen-finish">
+  <div class="fire-bg"></div>
+  <div class="inner">
+    <div class="fin-card" style="max-width:420px;">
+      <span class="fin-medal" id="finMedal">🏆</span>
+      <h1 class="fin-title" id="finTitle">¡Maestro Forjador!</h1>
+      <p  class="fin-sub"   id="finSub">Completaste el Camino del Herrero.</p>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="st-lbl">Puntos</div><div class="st-val gold-c" id="finPts">0</div></div>
+        <div class="stat-box"><div class="st-lbl">Monedas</div><div class="st-val" id="finCoins">0</div></div>
+        <div class="stat-box"><div class="st-lbl">Rango</div><div class="st-val fire-c" id="finRank">-</div></div>
+        <div class="stat-box"><div class="st-lbl">Precisión</div><div class="st-val" id="finAcc">-</div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="brand-panel">
+        <span class="br-icon">⚒️🔥</span>
+        <div class="br-name">FORJA VN</div>
+        <p class="br-tag">Cuchillos artesanales premium, piezas únicas hechas con pasión, fuego y acero.</p>
+        <div class="br-tags">
+          <span class="br-chip">Cuchillos Artesanales</span>
+          <span class="br-chip">Acero Premium</span>
+          <span class="br-chip">Piezas Únicas</span>
+          <span class="br-chip">Forjado al Fuego</span>
+          <span class="br-chip">Pedidos Personalizados</span>
+          <span class="br-chip">Envíos al País</span>
+          <span class="br-chip">Mangos Premium</span>
+          <span class="br-chip">Trabajos Especiales</span>
+        </div>
+        <div class="soc-row">
+          <button class="btn btn-wa btn-sm" onclick="contactWA()">💬 WhatsApp</button>
+          <button class="btn btn-ig btn-sm" onclick="goIG()">📸 @forja_vn</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="startGame()">🎲 Jugar de Nuevo</button>
+      <button class="btn btn-secondary mt8" onclick="showIntro()">← Inicio</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ── ESTADO ─────────────────────────────────────────────────
+   rollsUsed : tiradas usadas en la sesión actual (se resetea al reiniciar)
+   rollsMax  : límite de tiradas gratis (3)
+   premium   : true cuando se desbloqueó con código — NUNCA se resetea
+   
+   REGLA DE BLOQUEO (en rollDice, NO en startGame):
+   Si !premium && rollsUsed >= rollsMax → mostrar Premium y bloquear dado.
+   No hay bypass posible: startGame y "Jugar de nuevo" no dan tiradas extra.
+──────────────────────────────────────────────────────────── */
+var G = {
+  pos:0, points:0, coins:0, lives:3, turns:0,
+  skipNext:false, qTotal:0, qCorrect:0,
+  rollsUsed:0, rollsMax:3,   /* tiradas libres — control en rollDice() */
+  premium:false,             /* persiste toda la sesión — nunca se borra */
+  unlocked:[],
+  moving:false, answered:false
+};
+var TOTAL  = 36;
+var PCODE  = 'MAESTROVN2026';
+
+/* ── DEFINICIÓN DE CASILLAS ─────────────────── */
+var CELLS = [
+  {t:'start', i:'🏁', n:'Inicio'},   {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'fire',  i:'🔥', n:'Fuego'},    {t:'normal',i:'🔨',n:'Forja'},
+  {t:'bonus', i:'⭐', n:'Bonus'},    {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'danger',i:'💀', n:'Error'},    {t:'normal',i:'🔨',n:'Forja'},
+  {t:'temple',i:'💧', n:'Temple'},   {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'vip',   i:'👑', n:'VIP'},      {t:'normal',i:'🔨',n:'Forja'},
+  {t:'fire',  i:'🔥', n:'Llamas'},   {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'bonus', i:'🪙', n:'Monedas'},  {t:'normal',i:'🔨',n:'Forja'},
+  {t:'danger',i:'⚠️', n:'Filo Roto'},{t:'normal',i:'⚙️',n:'Taller'},
+  {t:'temple',i:'❄️', n:'Revenido'}, {t:'normal',i:'🔨',n:'Forja'},
+  {t:'bonus', i:'⚒️', n:'Maestro'},  {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'fire',  i:'🌋', n:'Fragua'},   {t:'normal',i:'🔨',n:'Forja'},
+  {t:'vip',   i:'💎', n:'Premium'},  {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'danger',i:'🩸', n:'Corte'},    {t:'normal',i:'🔨',n:'Forja'},
+  {t:'temple',i:'🌡️', n:'Temple'},   {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'bonus', i:'🏅', n:'Herrero'},  {t:'normal',i:'🔨',n:'Forja'},
+  {t:'fire',  i:'🔥', n:'Infierno'}, {t:'normal',i:'⚙️',n:'Taller'},
+  {t:'temple',i:'⚡', n:'Final'},    {t:'end',   i:'🏆',n:'Meta'}
+];
+var CSS = {normal:'cn',fire:'cf',temple:'ct',bonus:'cb',danger:'cd',vip:'cv',start:'cs',end:'ce'};
+
+/* ── EVENTOS ESPECIALES ─────────────────────── */
+var EVS = {
+  fire:[
+    {i:'🔥',t:'¡Llamas de la Fragua!', d:'El fuego te consumió. Aprendiste sobre el calor del metal.',      e:'⏭ Perdés el próximo turno',   p:'skip'},
+    {i:'🌋',t:'¡Erupción de Chispas!', d:'Las brasas saltan y te queman.',                                   e:'💔 Perdés una vida',           p:'life'},
+    {i:'🔴',t:'¡Temperatura Crítica!', d:'El acero estaba demasiado caliente.',                               e:'⬅ Retrocedés 2 casillas',      p:'back2'}
+  ],
+  temple:[
+    {i:'💧',t:'¡Temple Perfecto!',    d:'Lograste el temple ideal. El acero toma la dureza exacta.',         e:'➡ Avanzás 2 casillas',         b:'fwd2'},
+    {i:'❄️',t:'¡Revenido Exitoso!',  d:'El revenido fue impecable. Tu cuchillo gana tenacidad.',             e:'🪙 +30 monedas',               b:'c30'},
+    {i:'⚡',t:'¡Acero Perfecto!',    d:'Microestructura ideal. Nivel superior.',                             e:'⭐ +100 puntos',               b:'p100'}
+  ],
+  bonus:[
+    {i:'⭐',t:'¡Bonus de Maestro!',  d:'Tu habilidad es reconocida. El gremio te recompensa.',               e:'🪙 +50 · ⭐ +150 pts',         b:'big'},
+    {i:'🪙',t:'¡Tesoro de la Fragua!',d:'Encontraste el tesoro escondido.',                                  e:'🪙 +80 monedas',               b:'c80'},
+    {i:'🏅',t:'¡Reconocimiento!',    d:'Los maestros reconocen tu talento.',                                 e:'⭐ +200 puntos',               b:'p200'}
+  ],
+  danger:[
+    {i:'💀',t:'¡Error de Forja!',    d:'Error grave. El hierro se quebró.',                                  e:'💔 -1 vida · ⏭ perdés turno',  p:'both'},
+    {i:'⚠️',t:'¡Filo Perdido!',     d:'Erraste el ángulo del filo.',                                        e:'💔 Perdés una vida',           p:'life'},
+    {i:'🩸',t:'¡Corte Accidental!',  d:'El filo sin protección te cortó.',                                   e:'⬅ Retrocedés 3 casillas',      p:'back3'}
+  ],
+  vip:[
+    {i:'👑',t:'¡Cliente VIP!',       d:'Un cliente exclusivo encargó una pieza especial.',                   e:'🪙 +100 · ⭐ +250 pts',        b:'vip'},
+    {i:'💎',t:'¡Pedido Premium!',    d:'Un coleccionista quiere un cuchillo damasco.',                       e:'🪙 +120 monedas',              b:'c120'}
+  ]
+};
+
+/* ── PREGUNTAS ──────────────────────────────── */
+var QS = [
+  {c:'Acero 1070',       q:'¿A qué temperatura aproximada se templa el acero 1070?',                            o:['650°C','820°C','1200°C','400°C'],                                              a:1, p:50, e:'El 1070 se templa entre 800° y 830°C. A esa temperatura se forma austenita que se transforma en martensita al enfriar rápido.'},
+  {c:'Acero 1095',       q:'¿Cuál es el contenido de carbono aproximado del acero 1095?',                       o:['0,45%','0,75%','0,95%','1,20%'],                                               a:2, p:60, e:'El 1095 tiene ~0,95% de carbono. Eso lo hace muy duro pero requiere un buen manejo térmico para evitar fragilidad.'},
+  {c:'Acero Damasco',    q:'¿Cómo se fabrica el acero damasco moderno?',                                        o:['Fundición en vacío','Soldadura por forja de capas','Electrodeposición','Tratamiento químico'], a:1, p:80, e:'El damasco se crea soldando y plegando capas de aceros de diferente composición, generando el veteado característico.'},
+  {c:'Temple',           q:'¿Qué proceso sigue al temple en el tratamiento térmico?',                           o:['Normalizado','Recocido','Revenido','Cementado'],                                a:2, p:60, e:'Después del temple viene el revenido: se calienta a 150-250°C para reducir fragilidad manteniendo la dureza.'},
+  {c:'Dureza',           q:'¿Qué escala se usa para medir la dureza de un cuchillo?',                           o:['Brinell','Vickers','Rockwell C','Shore'],                                       a:2, p:50, e:'La escala Rockwell C (HRC) es el estándar en cuchillería. Los cuchillos premium suelen estar entre 58-62 HRC.'},
+  {c:'Acero Inoxidable', q:'¿Qué elemento hace que el acero inoxidable resista la corrosión?',                  o:['Níquel','Cromo (mín. 10,5%)','Molibdeno','Vanadio'],                           a:1, p:60, e:'El cromo en mínimo 10,5% forma una capa pasivadora de óxido que protege al acero de la oxidación.'},
+  {c:'Normalizado',      q:'¿Para qué sirve el normalizado?',                                                   o:['Aumentar dureza al máximo','Aliviar tensiones internas','Dar color al metal','Soldar piezas'], a:1, p:55, e:'El normalizado calienta al rojo y deja enfriar al aire. Elimina tensiones internas y refina el grano.'},
+  {c:'Filo',             q:'¿Cuál es el ángulo de filo en un cuchillo japonés?',                                o:['30-40°','15-20°','45-50°','5-8°'],                                             a:1, p:70, e:'Los cuchillos japoneses usan 15-20° por lado para corte extremo. Los occidentales usan 20-25°.'},
+  {c:'Mangos',           q:'¿Qué material se considera premium para mangos artesanales?',                        o:['PVC','Maderas nobles (ébano, burl)','Aluminio anodizado','Plástico ABS'],     a:1, p:65, e:'Las maderas nobles como ébano, nogal, burl o estabilizadas son el estándar premium en cuchillería artesanal.'},
+  {c:'Acero 1070',       q:'¿Qué diferencia al 1070 del 1095?',                                                 o:['El 1070 es más duro','El 1070 es más tenaz y menos frágil','El 1070 tiene cromo','El 1070 es inoxidable'], a:1, p:70, e:'El 1070 tiene menos carbono que el 1095, lo que lo hace más tenaz aunque alcanza menor dureza.'},
+  {c:'Temple',           q:'¿Cuál es el medio de temple más rápido para aceros al carbono?',                    o:['Aceite','Agua','Aire','Salmuera'],                                              a:3, p:65, e:'La salmuera (agua con sal) es la más agresiva. El aceite equilibra velocidad y riesgo de crack en cuchillería.'},
+  {c:'Fosfatizado',      q:'¿Para qué se usa el fosfatizado?',                                                  o:['Aumentar el filo','Proteger contra oxidación','Dar brillo espejado','Endurecer la hoja'], a:1, p:60, e:'El fosfatizado crea una capa protectora de fosfato que reduce la corrosión y mejora la adherencia de aceites.'},
+  {c:'Pulido',           q:'¿Qué grano de lija se usa en el acabado espejo?',                                   o:['Grano 80','Grano 220','Grano 1500-2000+','Grano 400'],                         a:2, p:70, e:'Para espejo se llega a grano 1500-2000 o más, culminando con pasta de alumina o carburo de cromo.'},
+  {c:'Forja',            q:'¿Qué es el hamon en un cuchillo japonés?',                                          o:['Un defecto','Línea entre zona templada y sin templar','La marca del fabricante','El filo biselado'], a:1, p:80, e:'El hamon es la línea visible entre zona dura y zona blanda, formada al aplicar arcilla antes del temple.'},
+  {c:'Damasco',          q:'¿Cuántas capas tiene un acero damasco artesanal básico?',                           o:['5-10 capas','15-300+ capas','500+ capas','Solo 2 capas'],                      a:1, p:75, e:'El damasco clásico comienza con 15-32 capas. Con plegados sucesivos puede llegar a 200-300+ capas.'},
+  {c:'Mantenimiento',    q:'¿Con qué frecuencia se debe aceitar un cuchillo de acero al carbono?',              o:['Nunca','Después de cada uso o semanalmente','Solo cuando tiene óxido','Una vez al año'], a:1, p:55, e:'Los aceros al carbono oxidan fácilmente. Limpiar y aceitar con aceite mineral después de cada uso.'},
+  {c:'Rockwell',         q:'¿Qué significa HRC 60?',                                                            o:['El cuchillo pesa 60g','La dureza Rockwell C es 60','El ángulo es 60°','El acero tiene 60% de carbono'], a:1, p:65, e:'HRC 60 indica 60 puntos en escala Rockwell C. Excelente para cuchillería: mantiene filo por mucho tiempo.'},
+  {c:'Acero 1095',       q:'¿Por qué el 1095 es popular en cuchillos de supervivencia?',                       o:['Es inoxidable','Fácil de reafilar con piedras simples','Es más ligero','No necesita mantenimiento'], a:1, p:70, e:'El 1095 puede afilarse con casi cualquier piedra abrasiva. Su dureza es predecible, ideal para uso rudo.'},
+  {c:'Forja Artesanal',  q:'¿Qué diferencia a un cuchillo forjado de uno maquinado?',                          o:['El forjado usa máquinas','El forjado orienta el grano del acero','El maquinado es siempre superior','No hay diferencia'], a:1, p:85, e:'Al forjar se orienta el grano siguiendo la forma de la hoja, lo que mejora la resistencia de la pieza.'},
+  {c:'Temple',           q:'¿Por qué es importante el revenido doble?',                                         o:['Para duplicar la dureza','Para transformar martensita retenida','Para mejorar el color','Para limpiar'], a:1, p:80, e:'El revenido doble transforma la martensita retenida, mejora la tenacidad y la estabilidad dimensional.'}
+];
+
+/* ── LOGROS ─────────────────────────────────── */
+var ACHS = [
+  {id:'q1',   i:'🔥', n:'Primera Forja',   f:function(g){return g.qTotal>=1;}},
+  {id:'c3',   i:'⚔️', n:'Triple Acierto',  f:function(g){return g.qCorrect>=3;}},
+  {id:'half', i:'🏅', n:'Medio Camino',     f:function(g){return g.pos>=17;}},
+  {id:'rich', i:'🪙', n:'Herrero Rico',     f:function(g){return g.coins>=200;}},
+  {id:'win',  i:'🏆', n:'Maestro Forjador', f:function(g){return g.pos>=35;}}
+];
+
+/* ── PARTÍCULAS ─────────────────────────────── */
+function initParticles() {
+  var c = document.getElementById('particles');
+  for (var i=0;i<16;i++) {
+    var s=document.createElement('div'); s.className='spark';
+    s.style.cssText='left:'+(Math.random()*100).toFixed(1)+'%;bottom:-6px;'+
+      'animation-duration:'+(4+Math.random()*5).toFixed(1)+'s;'+
+      'animation-delay:'+(Math.random()*7).toFixed(1)+'s;'+
+      '--dx:'+((Math.random()-.5)*70).toFixed(0)+'px;';
+    c.appendChild(s);
+  }
+}
+
+/* ── PANTALLAS ──────────────────────────────── */
+function showScreen(id) {
+  var all=document.querySelectorAll('.screen');
+  for(var i=0;i<all.length;i++) all[i].classList.add('hidden');
+  document.getElementById('screen-'+id).classList.remove('hidden');
+}
+function showIntro() {
+  showScreen('intro');
+  /* Actualizar contador visual de tiradas */
+  var el = document.getElementById('freeLeft');
+  if (!el) return;
+  if (G.premium) {
+    el.textContent = '∞';
+    el.style.color = 'var(--gold-light)';
+  } else {
+    var left = Math.max(0, G.rollsMax - G.rollsUsed);
+    el.textContent = left;
+    el.style.color = left > 0 ? 'var(--gold-light)' : 'var(--fire)';
+  }
+}
+function showPremium() {
+  document.getElementById('codeMsg').textContent='';
+  document.getElementById('codeInp').value='';
+  showScreen('premium');
+}
+
+/* ── TABLERO ────────────────────────────────── */
+function buildBoard() {
+  var g=document.getElementById('boardGrid'); g.innerHTML='';
+  for(var i=0;i<TOTAL;i++) {
+    var d=CELLS[i]||{t:'normal',i:'⚙️',n:'Taller'};
+    var c=document.createElement('div');
+    c.className='cell '+(CSS[d.t]||'cn'); c.id='cell-'+i;
+    c.innerHTML='<span class="cell-num">'+(i+1)+'</span>'+
+                '<span class="cell-icon">'+d.i+'</span>'+
+                '<span class="cell-name">'+d.n+'</span>';
+    g.appendChild(c);
+  }
+  markPlayer();
+}
+function markPlayer() {
+  var prev=document.querySelectorAll('.cell-player');
+  for(var i=0;i<prev.length;i++){
+    prev[i].classList.remove('cell-player');
+    var t=prev[i].querySelector('.player-token');
+    if(t) t.parentNode.removeChild(t);
+  }
+  var cur=document.getElementById('cell-'+G.pos);
+  if(!cur) return;
+  cur.classList.add('cell-player');
+  var t=document.createElement('div'); t.className='player-token'; t.textContent='🧔';
+  cur.appendChild(t);
+  setTimeout(function(){cur.scrollIntoView({behavior:'smooth',block:'center'});},80);
+}
+function hud() {
+  document.getElementById('hPos').textContent   = G.pos+1;
+  document.getElementById('hCoins').textContent = G.coins;
+  document.getElementById('hPts').textContent   = G.points;
+  var h=''; for(var i=0;i<3;i++) h+=(i<G.lives?'❤':'🖤'); 
+  document.getElementById('hLives').textContent = h;
+}
+function setStatus(m){ document.getElementById('statusMsg').textContent=m; }
+function setDice(on){ document.getElementById('btnDice').disabled=!on; }
+
+/* ── INICIO DE PARTIDA ───────────────────────────────────────
+   startGame() NO controla el premium ni descuenta tiradas.
+   Solo resetea el estado de la partida.
+   El control de tiradas y el bloqueo ocurren en rollDice().
+   
+   Esto evita bypasses: no importa cuántas veces llames a
+   startGame(), las tiradas siguen controladas por rollsUsed.
+──────────────────────────────────────────────────────────── */
+function startGame() {
+  /* Resetear estado de partida (SIN tocar premium ni rollsUsed) */
+  G.pos=0; G.points=0; G.coins=0; G.lives=3; G.turns=0;
+  G.skipNext=false; G.qTotal=0; G.qCorrect=0; G.unlocked=[];
+  G.moving=false; G.answered=false;
+
+  showScreen('game');
+  buildBoard();
+  hud();
+
+  if (G.premium) {
+    setStatus('¡Tirá el dado para comenzar tu camino, Maestro!');
+    setDice(true);
+  } else {
+    var left = G.rollsMax - G.rollsUsed;
+    if (left <= 0) {
+      /* No quedan tiradas — bloquear de inmediato */
+      setStatus('🔒 Sin tiradas disponibles. Desbloqueá Premium.');
+      setDice(false);
+      setTimeout(showPremium, 800);
+    } else {
+      setStatus('🔥 Tiradas gratis restantes: ' + left + ' — ¡Jugá!');
+      setDice(true);
+    }
+  }
+}
+
+/* ── DADO ─────────────────────────────────────────────────────
+   AQUÍ es donde se controla el sistema premium.
+   
+   Flujo en modo free:
+   1. Verificar si quedan tiradas (rollsUsed < rollsMax)
+   2. Si no quedan → bloquear dado + mostrar Premium
+   3. Si quedan → incrementar rollsUsed ANTES de tirar
+   4. Después de tirar la 3ra (rollsUsed === rollsMax):
+      el dado queda bloqueado tras responder la pregunta
+      (el flag blockAfterQ lo activa continueGame)
+   
+   En modo premium: sin límite, dado siempre disponible.
+──────────────────────────────────────────────────────────── */
+var DF=['⚀','⚁','⚂','⚃','⚄','⚅'];
+var blockAfterQ = false; /* true cuando esta fue la última tirada free */
+
+function rollDice() {
+  if(G.moving) return;
+
+  /* ── CONTROL PREMIUM — ÚNICO PUNTO DE CONTROL ── */
+  if (!G.premium) {
+    if (G.rollsUsed >= G.rollsMax) {
+      /* Sin tiradas: bloquear dado y mostrar premium */
+      setDice(false);
+      setStatus('🔒 Agotaste tus 3 tiradas de prueba.');
+      setTimeout(showPremium, 600);
+      return;
+    }
+    /* Consumir una tirada */
+    G.rollsUsed++;
+    /* Actualizar contador en pantalla intro (por si vuelve) */
+    var elFree = document.getElementById('freeLeft');
+    if (elFree) {
+      var left = G.rollsMax - G.rollsUsed;
+      elFree.textContent = left;
+      elFree.style.color = left > 0 ? 'var(--gold-light)' : 'var(--fire)';
+    }
+    /* Si esta fue la ÚLTIMA tirada, preparar bloqueo para después de la pregunta */
+    blockAfterQ = (G.rollsUsed >= G.rollsMax);
+    /* Actualizar status con tiradas restantes */
+    var rem = G.rollsMax - G.rollsUsed;
+    if (rem > 0) {
+      setStatus('🔥 Tirada ' + G.rollsUsed + ' de ' + G.rollsMax + ' — te quedan ' + rem);
+    } else {
+      setStatus('🔥 Última tirada de prueba...');
+    }
+  }
+
+  if(G.skipNext){ G.skipNext=false; setStatus('Turno salteado por penalización. ¡Tirá de nuevo!'); G.moving=false; return; }
+
+  G.moving=true; setDice(false);
+  var db=document.getElementById('diceBox'); db.classList.add('rolling');
+  var n=0, iv=setInterval(function(){
+    db.textContent=DF[Math.floor(Math.random()*6)]; n++;
+    if(n>=10){ clearInterval(iv); db.classList.remove('rolling');
+      var r=Math.floor(Math.random()*6)+1; db.textContent=DF[r-1]; doMove(r); }
+  },70);
+}
+function doMove(steps) {
+  G.turns++; var tgt=Math.min(G.pos+steps,TOTAL-1), cur=G.pos;
+  function step(){
+    if(cur<tgt){ cur++; G.pos=cur; markPlayer(); setStatus('Avanzando... casilla '+(cur+1));
+      setTimeout(step,190); }
+    else{ G.moving=false; checkAchs(); landOn(tgt); }
+  }
+  step();
+}
+function landOn(idx) {
+  if(idx>=TOTAL-1){ setTimeout(showVictory,400); return; }
+  var d=CELLS[idx];
+  if(d.t==='normal'||d.t==='start') setTimeout(askQ,250);
+  else setTimeout(function(){triggerSp(d.t);},250);
+}
+
+/* ── CASILLAS ESPECIALES ────────────────────── */
+var pendEv=null;
+function triggerSp(type) {
+  var pool=EVS[type]||EVS.bonus;
+  var ev=pool[Math.floor(Math.random()*pool.length)]; pendEv=ev;
+  document.getElementById('spIco').textContent=ev.i;
+  document.getElementById('spTit').textContent=ev.t;
+  document.getElementById('spDes').textContent=ev.d;
+  document.getElementById('spEff').textContent=ev.e;
+  var bc=type==='fire'?'var(--fire)':type==='temple'?'#4080ff':type==='bonus'?'#40c060':type==='vip'?'var(--gold)':'#ff2200';
+  document.getElementById('spCard').style.border='1px solid '+bc;
+  showScreen('special');
+}
+function afterSpecial() {
+  var ev=pendEv; pendEv=null;
+  if(!ev){ backGame(); return; }
+  if(ev.p){
+    if(ev.p==='skip')  G.skipNext=true;
+    if(ev.p==='life')  G.lives=Math.max(0,G.lives-1);
+    if(ev.p==='back2'){ G.pos=Math.max(0,G.pos-2); markPlayer(); }
+    if(ev.p==='back3'){ G.pos=Math.max(0,G.pos-3); markPlayer(); }
+    if(ev.p==='both'){  G.lives=Math.max(0,G.lives-1); G.skipNext=true; }
+  }
+  if(ev.b){
+    if(ev.b==='fwd2'){ G.pos=Math.min(TOTAL-1,G.pos+2); markPlayer(); }
+    if(ev.b==='c30')  G.coins+=30;
+    if(ev.b==='c80')  G.coins+=80;
+    if(ev.b==='c120') G.coins+=120;
+    if(ev.b==='p100') G.points+=100;
+    if(ev.b==='p200') G.points+=200;
+    if(ev.b==='big')  { G.coins+=50; G.points+=150; }
+    if(ev.b==='vip')  { G.coins+=100; G.points+=250; }
+  }
+  hud(); checkAchs(); backGame();
+}
+function backGame() {
+  showScreen('game');
+  if(G.lives<=0){ setTimeout(showGameOver,300); return; }
+
+  /* Verificar si se bloqueó tras evento especial en última tirada */
+  if (blockAfterQ) {
+    blockAfterQ = false;
+    setDice(false);
+    setStatus('🔒 Usaste tus 3 tiradas de prueba. ¡Desbloqueá Premium!');
+    setTimeout(showPremium, 1200);
+    return;
+  }
+
+  if (!G.premium && G.rollsUsed >= G.rollsMax) {
+    setDice(false);
+    setStatus('🔒 Sin tiradas disponibles.');
+    setTimeout(showPremium, 600);
+    return;
+  }
+
+  setDice(true);
+  setStatus('¡Seguí adelante, forjador!');
+}
+
+/* ── PREGUNTAS ──────────────────────────────────────────────
+   CORRECCIONES CRÍTICAS:
+   1. Botones creados con createElement y addEventListener
+   2. touchend con preventDefault() elimina delay de 300ms
+   3. G.answered evita doble respuesta
+   4. Los <span> internos tienen pointer-events:none en CSS
+   5. No se usa pointer-events en CSS para bloquear — se usa la clase .opt-done
+──────────────────────────────────────────────────────────── */
+var activeQ=null;
+
+function askQ() {
+  var q=QS[Math.floor(Math.random()*QS.length)];
+  activeQ=q; G.answered=false;
+
+  document.getElementById('qCat').textContent = q.c;
+  document.getElementById('qPts').textContent = '+'+q.p+' pts';
+  document.getElementById('qText').textContent = q.q;
+
+  var fb=document.getElementById('fbBox');
+  fb.className='fb'; fb.textContent='';
+
+  var bc=document.getElementById('btnCont');
+  bc.className='btn btn-primary btn-cont'; /* sin bc-show = oculto */
+
+  var grid=document.getElementById('optGrid');
+  grid.innerHTML='';
+
+  var L=['A','B','C','D'];
+  for(var i=0;i<q.o.length;i++){
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.className='opt-btn';
+    btn.innerHTML='<span class="opt-letter">'+L[i]+'</span><span class="opt-text">'+q.o[i]+'</span>';
+
+    /* ADJUNTAR EVENTOS — closure para capturar índice correcto */
+    (function(idx,el){
+      el.addEventListener('click', function(ev){ ev.stopPropagation(); doAnswer(idx); });
+      el.addEventListener('touchend', function(ev){
+        ev.preventDefault();    /* elimina delay 300ms Android */
+        ev.stopPropagation();
+        doAnswer(idx);
+      }, {passive:false});
+    })(i, btn);
+
+    grid.appendChild(btn);
+  }
+
+  showScreen('question');
+}
+
+function doAnswer(idx) {
+  if(G.answered || !activeQ) return;
+  G.answered=true; G.qTotal++;
+
+  /* deshabilitar todos los botones */
+  var bs=document.querySelectorAll('.opt-btn');
+  for(var i=0;i<bs.length;i++) bs[i].classList.add('opt-done');
+
+  var fb=document.getElementById('fbBox');
+
+  if(idx===activeQ.a){
+    G.qCorrect++;
+    G.points+=activeQ.p;
+    G.coins+=Math.floor(activeQ.p/5);
+    bs[idx].classList.add('opt-ok');
+    fb.className='fb fb-show fb-ok';
+    fb.textContent='✅ ¡Correcto! '+activeQ.e;
+  } else {
+    G.lives=Math.max(0,G.lives-1);
+    G.points=Math.max(0,G.points-20);
+    bs[idx].classList.add('opt-bad');
+    if(bs[activeQ.a]) bs[activeQ.a].classList.add('opt-ok');
+    fb.className='fb fb-show fb-bad';
+    fb.textContent='❌ Incorrecto. '+activeQ.e;
+  }
+
+  document.getElementById('btnCont').className='btn btn-primary btn-cont bc-show';
+  checkAchs();
+}
+
+function continueGame() {
+  activeQ=null; G.answered=false;
+  showScreen('game'); hud();
+
+  /* Verificar game over por vidas */
+  if(G.lives<=0){ setTimeout(showGameOver,300); return; }
+
+  /* ── BLOQUEO TRAS ÚLTIMA TIRADA FREE ──
+     blockAfterQ se activa en rollDice() cuando se consumió
+     la 3ra tirada. Al llegar aquí (después de responder),
+     se bloquea el dado y se muestra Premium.
+     NO hay forma de evitar esto: el botón "Continuar"
+     siempre pasa por aquí.
+  ── */
+  if (blockAfterQ) {
+    blockAfterQ = false;
+    setDice(false);
+    setStatus('🔒 Usaste tus 3 tiradas de prueba. ¡Desbloqueá Premium!');
+    setTimeout(showPremium, 1200);
+    return;
+  }
+
+  /* Verificar límite por si se llegó aquí por otra vía */
+  if (!G.premium && G.rollsUsed >= G.rollsMax) {
+    setDice(false);
+    setStatus('🔒 Sin tiradas disponibles.');
+    setTimeout(showPremium, 600);
+    return;
+  }
+
+  if (G.premium) {
+    setStatus('¡Buen trabajo! ¿Tirás de nuevo?');
+  } else {
+    var left = G.rollsMax - G.rollsUsed;
+    setStatus('¡Buen trabajo! Tiradas restantes: ' + left + ' 🔥');
+  }
+  setDice(true);
+}
+
+/* ── GAME OVER / VICTORIA ───────────────────── */
+function showGameOver() {
+  fillFin('💔','¡Jornada Terminada!','Perdiste todas tus vidas. Pero cada derrota forja a un mejor herrero.');
+  showScreen('finish');
+}
+function showVictory() {
+  fillFin('🏆','¡Maestro Forjador!','¡Completaste el Camino del Herrero! Sos un verdadero maestro del acero.');
+  showScreen('finish');
+}
+function fillFin(medal,title,sub) {
+  var acc=G.qTotal>0?Math.round(G.qCorrect/G.qTotal*100):0;
+  document.getElementById('finMedal').textContent = medal;
+  document.getElementById('finTitle').textContent = title;
+  document.getElementById('finSub').textContent   = sub;
+  document.getElementById('finPts').textContent   = G.points;
+  document.getElementById('finCoins').textContent = G.coins;
+  document.getElementById('finRank').textContent  = getRank();
+  document.getElementById('finAcc').textContent   = acc+'%';
+}
+function getRank() {
+  if(G.points>=800) return '⚔ Maestro';
+  if(G.points>=500) return '🔥 Forjador';
+  if(G.points>=250) return '🔨 Herrero';
+  return '🪨 Aprendiz';
+}
+
+/* ── LOGROS ─────────────────────────────────── */
+var tTimer=null;
+function checkAchs() {
+  for(var i=0;i<ACHS.length;i++){
+    var a=ACHS[i];
+    if(G.unlocked.indexOf(a.id)===-1 && a.f(G)){
+      G.unlocked.push(a.id); showToast(a);
+    }
+  }
+}
+function showToast(ach) {
+  document.getElementById('achIco').textContent=ach.i;
+  document.getElementById('achNm').textContent=ach.n;
+  var t=document.getElementById('achToast'); t.classList.add('ts');
+  if(tTimer) clearTimeout(tTimer);
+  tTimer=setTimeout(function(){t.classList.remove('ts');},3000);
+}
+
+/* ── PREMIUM — ALIAS, COPY Y WHATSAPP ─────────────────────
+   SIN botones que abran URLs de Mercado Pago directamente.
+   El alias se copia al portapapeles. El pago se hace
+   manualmente en la app de Mercado Pago. El comprobante
+   se envía por WhatsApp.
+─────────────────────────────────────────────────────────── */
+
+function copyAlias() {
+  var alias = 'Leon1780';
+  var btn   = document.getElementById('btnCopy');
+  var toast = document.getElementById('copyToast');
+
+  /* Intentar Clipboard API moderna */
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(alias).then(function() {
+      showCopySuccess(btn, toast);
+    }).catch(function() {
+      fallbackCopy(alias, btn, toast);
+    });
+  } else {
+    fallbackCopy(alias, btn, toast);
+  }
+}
+
+function fallbackCopy(text, btn, toast) {
+  /* Fallback para Android WebView y navegadores sin Clipboard API */
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showCopySuccess(btn, toast);
+  } catch(e) {
+    toast.textContent = 'Copiá el alias manualmente: Leon1780';
+    toast.style.color = 'var(--gold)';
+  }
+  document.body.removeChild(ta);
+}
+
+function showCopySuccess(btn, toast) {
+  btn.textContent  = '✅ Copiado';
+  btn.style.background = 'linear-gradient(135deg,#2a7a3a,#1a5a2a)';
+  btn.style.color = '#fff';
+  toast.textContent = '✅ Alias copiado — pegalo en Mercado Pago';
+  toast.style.color = '#80ffaa';
+  setTimeout(function() {
+    btn.textContent  = 'Copiar';
+    btn.style.background = '';
+    btn.style.color = '';
+    toast.textContent = '';
+  }, 2500);
+}
+
+function sendProof() {
+  var m = encodeURIComponent('Hola, quiero desbloquear el acceso premium de Forja VN y enviar mi comprobante de pago.');
+  window.open('https://wa.me/5492964524899?text=' + m, '_blank');
+}
+
+function sendProofVIP() {
+  var m = encodeURIComponent('Hola, quiero información sobre la Membresía VIP Maestro Herrero de Forja VN ($25.000 ARS).');
+  window.open('https://wa.me/5492964524899?text=' + m, '_blank');
+}
+function redeemCode() {
+  var v=document.getElementById('codeInp').value.trim().toUpperCase();
+  var msg=document.getElementById('codeMsg');
+  if(v===PCODE){
+    /* Activar premium — nunca más se bloquea el dado */
+    G.premium=true;
+    blockAfterQ=false;
+    msg.style.color='#80ffaa';
+    msg.textContent='✅ ¡Código válido! Acceso Premium activado para siempre.';
+    setTimeout(function(){ showIntro(); }, 2000);
+  } else {
+    msg.style.color='var(--fire)';
+    msg.textContent='❌ Código incorrecto. Verificá y volvé a intentar.';
+  }
+}
+
+/* ── LINKS EXTERNOS ─────────────────────────── */
+function contactWA() {
+  var m=encodeURIComponent('Hola Forja VN! Me interesa un cuchillo artesanal. ¿Podés darme más información?');
+  window.open('https://wa.me/5492964524899?text='+m,'_blank');
+}
+function goIG() { window.open('https://instagram.com/forja_vn','_blank'); }
+
+/* ── INIT ───────────────────────────────────── */
+initParticles();
+showIntro();
+</script>
+</body>
+</html>
